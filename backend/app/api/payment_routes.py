@@ -34,6 +34,19 @@ class PaymentHistoryResponse(BaseModel):
     payments: list[dict]
 
 
+class RetryPaymentRequest(BaseModel):
+    """
+    Запрос для сценария retry в LAB 04.
+
+    mode:
+    - unsafe: без защиты от повторного запроса
+    - for_update: защита из lab_02 (REPEATABLE READ + FOR UPDATE)
+    """
+
+    order_id: uuid.UUID
+    mode: Literal["unsafe", "for_update"] = "unsafe"
+
+
 @router.post("/pay", response_model=PaymentResponse)
 async def pay_order(
     request: PaymentRequest,
@@ -101,6 +114,48 @@ async def get_payment_history(
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/retry-demo", response_model=PaymentResponse)
+async def retry_demo_payment(
+    request: RetryPaymentRequest,
+    session: AsyncSession = Depends(get_db)
+):
+    """
+    LAB 04: Endpoint для сценария \"запрос на оплату -> обрыв сети -> повторный запрос\".
+
+    Как использовать:
+    1) Вызвать endpoint 2 раза для одного order_id.
+    2) Во втором вызове:
+       - с тем же Idempotency-Key ожидается кэшированный ответ (после реализации middleware);
+       - без ключа (или с новым ключом) возможна повторная оплата в режиме unsafe.
+
+    mode:
+    - unsafe: вызывает pay_order_unsafe()
+    - for_update: вызывает pay_order_safe() для сравнения с решением lab_02
+    """
+    service = PaymentService(session)
+    try:
+        if request.mode == "for_update":
+            result = await service.pay_order_safe(request.order_id)
+            mode_name = "for_update"
+        else:
+            result = await service.pay_order_unsafe(request.order_id)
+            mode_name = "unsafe"
+
+        return PaymentResponse(
+            success=True,
+            message=f"Retry demo payment succeeded ({mode_name})",
+            order_id=request.order_id,
+            status=result.get("status", "paid")
+        )
+    except Exception as e:
+        return PaymentResponse(
+            success=False,
+            message=str(e),
+            order_id=request.order_id,
+            status=None
+        )
 
 
 @router.post("/test-concurrent")
