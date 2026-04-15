@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
 from app.api.payment_routes import router as payment_router
+from app.middleware.idempotency_middleware import IdempotencyMiddleware
 
 app = FastAPI(
     title="Marketplace API",
@@ -20,6 +21,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# LAB 04:
+# Middleware пока заглушка. Студенты реализуют логику идемпотентности внутри dispatch().
+app.add_middleware(IdempotencyMiddleware)
 
 # Include routes
 app.include_router(router, prefix="/api")

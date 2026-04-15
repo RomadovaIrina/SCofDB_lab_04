@@ -7,3 +7,5 @@ sql/03_indexes.sql
 sql/04_explain_after_indexes.sql
 sql/05_partition_orders.sql
 sql/06_explain_after_partition.sql
+
+

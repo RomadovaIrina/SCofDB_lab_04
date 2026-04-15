@@ -109,6 +109,8 @@ $$ LANGUAGE plpgsql;
 
 -- TODO: Создать триггер trigger_check_order_not_already_paid
 -- BEFORE UPDATE ON orders FOR EACH ROW
+
+DROP TRIGGER IF EXISTS trigger_check_order_not_already_paid ON orders;
 CREATE TRIGGER trigger_check_order_not_already_paid
     BEFORE UPDATE ON orders
     FOR EACH ROW
