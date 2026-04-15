@@ -97,15 +97,12 @@ docker compose exec -T backend pytest app/tests/test_retry_without_idempotency.p
 
 Вывод
 ```
-app/tests/test_retry_without_idempotency.py::test_retry_without_idempotency_can_double_pay Race condition detected: 1 нашли для order_id=a33b56c6-67f7-42c1-948e-c49957cbe0fa
-row: paid at 2026-04-10 09:46:21.193459
-Оплачено: 1
-Возможные причины
-Отсутствие идемпотентности позволяет независимо обработать запросы
-и привести к двойному списанию
+{'id': 'b5430965-cdc3-4326-ac5d-e53d634d3cca', 'order_id': '9d305c0a-0663-48c4-af30-1d5034ef6ef5', 'status': 'paid', 'changed_at': datetime.datetime(2026, 4, 15, 19, 18, 54, 794866)}
+{'id': 'aea9d090-18e3-4efe-a307-bf3f1a18e28c', 'order_id': '9d305c0a-0663-48c4-af30-1d5034ef6ef5', 'status': 'paid', 'changed_at': datetime.datetime(2026, 4, 15, 19, 18, 54, 813179)}
 PASSED
-```
 
+```
+видим, что у одного ордер айди в разные таймстэмпы стоит статус paid
 
 ## 5. Демонстрация с Idempotency-Key
 _TODO: Приведите результаты сценария с одним и тем же ключом._
@@ -131,8 +128,8 @@ _TODO: Приведите результаты сценария с одним и
 ```
  response_2: {
    'status': 'paid',
-   'message': 'Retry demo payment succeeded (unsafe)',
    'success': True,
+   'message': 'Retry demo payment succeeded (unsafe)',
    'order_id': '49db90c3-39ca-449d-8e97-4b6526c06e88',
 }
 ```
@@ -153,6 +150,8 @@ _TODO: Приведите результаты сценария с одним и
 2026-04-10 10:04:20,259 INFO sqlalchemy.engine.Engine [cached since 0.1307s ago] ('fixed-key-123', 'POST', '/api/payments/retry-demo')
 
 ```
+видим, что еще вернулся fixed-key-123
+
 
 ## 6. Негативный сценарий
 _TODO: Один и тот же ключ с разным payload._
@@ -160,7 +159,11 @@ _TODO: Один и тот же ключ с разным payload._
 
 Запрос 1:
 ```
- RESPONSE 1: {'success': True, 'message': 'Retry demo payment succeeded (unsafe)', 'order_id': '3f11263f-091b-434a-b347-d8d1962f3c73', 'status': 'paid'}
+ RESPONSE 1: {
+'success': True,
+'message': 'Retry demo payment succeeded (unsafe)',
+'order_id': '3f11263f-091b-434a-b347-d8d1962f3c73',
+'status': 'paid'}
 ```
 
 Запрос 2: --> как раз ошибка 409
@@ -205,6 +208,6 @@ _TODO: Сравните подходы по сути и по UX._
 
 
 ## 8. Выводы
-1. в
-2. 2
-3. 3
+1. использование Middleware позволяет создать дополнительный уровень защиты решает проблему повторных запросов, которые могут возникнуть из-за сетевых проблем или тайм-аутов.
+2. Тк генерацией идемпотентного ключа занимается клиент, то ответственность за его уникальность тоже. и также клиент отправляет запрос с уникальным ключом, сервер может кэшировать его ответ для последующей обработки.
+3. Использование вместе с for update позволяет добить защиты от повторных запросов на уровне клиента и на уровне бд и так добиться лушчшей надежности
