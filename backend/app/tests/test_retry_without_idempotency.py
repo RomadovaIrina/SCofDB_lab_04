@@ -1,50 +1,4 @@
 """
-LAB 04: Демонстрация проблемы retry без идемпотентности.
-
-Сценарий:
-1) Клиент отправил запрос на оплату.
-2) До получения ответа \"сеть оборвалась\" (моделируем повтором запроса).
-3) Клиент повторил запрос БЕЗ Idempotency-Key.
-4) В unsafe-режиме возможна двойная оплата.
-"""
-
-import asyncio
-import pytest
-import uuid
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import text
-
-from app.application.payment_service import PaymentService
-
-# DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/marketplace"
-DATABASE_URL = "postgresql+asyncpg://postgres:postgres@db:5432/marketplace"
-
-
-@pytest.fixture
-async def test_engine():
-    engine = create_async_engine(
-        DATABASE_URL,
-        echo=False,
-        pool_pre_ping=True,
-    )
-    yield engine
-    await engine.dispose()
-
-
-@pytest.fixture
-async def db_session(test_engine):
-    async_session = sessionmaker(
-        test_engine,
-        expire_on_commit=False,
-        class_=AsyncSession,
-    )
-
-    async with async_session() as session:
-        yield session
-
-
-"""
 LAB 04: Проверка идемпотентного повтора запроса.
 
 Цель:
@@ -173,15 +127,10 @@ async def test_retry_without_idempotency_can_double_pay(test_order, test_engine)
         async with AsyncSession(test_engine) as session:
             service = PaymentService(session)
             await service.pay_order_unsafe(order_id)
-
-    async def retry_payment_2():
-        async with AsyncSession(test_engine) as session:
-            service = PaymentService(session)
-            await service.pay_order_unsafe(order_id)
     
     result = await asyncio.gather(
         retry_payment_1(),
-        retry_payment_2(),
+        retry_payment_1(),
         return_exceptions=True
     )
     print("\nRESULTS\n")
@@ -192,6 +141,9 @@ async def test_retry_without_idempotency_can_double_pay(test_order, test_engine)
     async with AsyncSession(test_engine) as session:
         service = PaymentService(session)
         history = await service.get_payment_history(order_id)
+    
+    for h in history:
+        print(h)
 
 
     assert len(history) == 2, "Ждали 2 оплаты = race condition"

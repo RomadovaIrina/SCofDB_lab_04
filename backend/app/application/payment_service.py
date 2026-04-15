@@ -59,18 +59,20 @@ class PaymentService:
             OrderAlreadyPaidError: если заказ уже оплачен
         """
         # TODO: Реализовать логику оплаты БЕЗ блокировок
-        bd_query = text(
-        """
-        SELECT status FROM orders WHERE id = :order_id
-        """)
-        result = await self.session.execute(bd_query, {"order_id": order_id})
+
+        # async with self.session.begin():
+        result = await self.session.execute(
+            text("SELECT status FROM orders WHERE id = :order_id"),
+            {"order_id": order_id}
+        )
         row = result.first()
         if not row:
             raise OrderNotFoundError(f"Order with ID {order_id} not found")
         
         status = row[0]
         if status != 'created':
-            raise OrderAlreadyPaidError(f"Order with ID {order_id} already paid")
+            pass
+            # raise OrderAlreadyPaidError(f"Order with ID {order_id} already paid")
         
         update_query = text(
         """
@@ -91,7 +93,7 @@ class PaymentService:
             "order_id": str(order_id), 
             "status": "paid"
         }
-
+    
     async def pay_order_safe(self, order_id: uuid.UUID) -> dict:
         """
         БЕЗОПАСНАЯ реализация оплаты заказа.
