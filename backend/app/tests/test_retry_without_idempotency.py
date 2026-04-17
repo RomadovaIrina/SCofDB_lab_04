@@ -123,16 +123,25 @@ async def test_retry_without_idempotency_can_double_pay(test_order, test_engine)
     """
     order_id = test_order
 
-    async def retry_payment_1():
-        async with AsyncSession(test_engine) as session:
-            service = PaymentService(session)
-            await service.pay_order_unsafe(order_id)
+    engine_1 = create_async_engine(DATABASE_URL)
+    engine_2 = create_async_engine(DATABASE_URL)
+
+    async def payment_attempt_1():
+        async with AsyncSession(engine_1) as session1:
+            service1 = PaymentService(session1)
+            return await service1.pay_order_unsafe(order_id)
+    
+    async def payment_attempt_2():
+        async with AsyncSession(engine_2) as session2:
+            service2 = PaymentService(session2)
+            return await service2.pay_order_unsafe(order_id)
     
     result = await asyncio.gather(
-        retry_payment_1(),
-        retry_payment_1(),
+        payment_attempt_1(),
+        payment_attempt_2(),
         return_exceptions=True
     )
+
     print("\nRESULTS\n")
     print(result)
 

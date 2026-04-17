@@ -71,8 +71,8 @@ class PaymentService:
         
         status = row[0]
         if status != 'created':
-            pass
-            # raise OrderAlreadyPaidError(f"Order with ID {order_id} already paid")
+            # pass
+            raise OrderAlreadyPaidError(f"Order with ID {order_id} already paid")
         
         update_query = text(
         """

@@ -191,7 +191,6 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
               headers=dict(response.headers),
           )  
 
-        # return await call_next(request)
 
     @staticmethod
     def build_request_hash(raw_body: bytes) -> str:
