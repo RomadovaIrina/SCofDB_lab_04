@@ -116,7 +116,7 @@ _TODO: Приведите результаты сценария с одним и
 
 Запрос 1:
 ```json
-    response_1: {
+response_1: {
    'status': 'paid',
    'success': True,
    'message': 'Retry demo payment succeeded (unsafe)',
@@ -125,7 +125,7 @@ _TODO: Приведите результаты сценария с одним и
 ```
 
 Запрос 2:
-```
+```json
  response_2: {
    'status': 'paid',
    'success': True,
