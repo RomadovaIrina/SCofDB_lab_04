@@ -158,7 +158,7 @@ _TODO: Один и тот же ключ с разным payload._
 
 
 Запрос 1:
-```
+```json
  RESPONSE 1: {
 'success': True,
 'message': 'Retry demo payment succeeded (unsafe)',
@@ -167,8 +167,10 @@ _TODO: Один и тот же ключ с разным payload._
 ```
 
 Запрос 2: --> как раз ошибка 409
-```
- RESPONSE 2: {'error': 'Conflict: usage of the same key with different payload'}
+```json
+ RESPONSE 2: {
+'error': 'Conflict: usage of the same key with different payload'
+}
 ```
 
 Логи
